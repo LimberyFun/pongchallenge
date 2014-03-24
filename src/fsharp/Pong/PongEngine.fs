@@ -4,11 +4,11 @@ open System.Windows.Input
 open PongTypes
 
 [<Literal>]
-let horizontalSpeedConstant = 0.3
+let horizontalSpeedConstant = 0.5
 [<Literal>]
-let verticalSpeedConstantMax = 6
+let verticalSpeedConstantMax = 5
 [<Literal>]
-let verticalSpeedConstantMin = -6
+let verticalSpeedConstantMin = -5
 
 let randomizer = new Random()
 
@@ -149,6 +149,6 @@ let bounceOfPaddle state =
     
 let winPlayer state =
     match state with
-    | s when s.PlayerOneScore = 10 -> {state with Status= PlayerOneWon}
-    | s when s.PlayerTwoScore = 10 -> {state with Status= PlayerTwoWon}
+    | s when s.PlayerOneScore = 10 -> {state with Status= MoveTo(PlayerOneWon)}
+    | s when s.PlayerTwoScore = 10 -> {state with Status= MoveTo(PlayerTwoWon)}
     |_ -> state

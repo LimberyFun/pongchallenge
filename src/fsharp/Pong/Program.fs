@@ -25,6 +25,8 @@ let rec gameloop state =
     | Exit -> ()
     | MoveTo(RunningTwoPlayer) -> gameloop (resetState RunningTwoPlayer)
     | MoveTo(RunningSinglePlayer) -> gameloop (resetState RunningSinglePlayer)
+    | MoveTo(PlayerOneWon) -> gameloop {state with Status = PlayerOneWon}
+    | MoveTo(PlayerTwoWon) -> gameloop {state with Status = PlayerTwoWon}
     | RunningTwoPlayer -> state |> processPlayerOneInput |> processPlayerTwoInput |> moveBall |> bounceBall |> bounceOfPaddle |> detectScore|>winPlayer |> render |> gameloop
     | RunningSinglePlayer -> state |> processPlayerTwoInput |> computerMove |> moveBall |> bounceBall |> bounceOfPaddle |> detectScore|>winPlayer |> render |> gameloop
     | _ -> processBlockingInput state |> render |> gameloop
