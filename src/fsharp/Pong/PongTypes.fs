@@ -1,15 +1,17 @@
 ﻿module PongTypes
 
+
 type GameStatus =
     | InitScreen
     | RunningSinglePlayer
     | RunningTwoPlayer
+    | RunningNetworkPlayerAsHost
+    | RunningNetworkPlayerAsClient
+    | WaitingForPartner
     | PlayerOneWon
     | PlayerTwoWon
     | MoveTo of GameStatus
     | Exit
-
-
 
 type PaddlePosition = double
 type Score = int
@@ -30,3 +32,4 @@ type GameState =
       PlayerOneScore : Score
       PlayerTwoScore : Score
     }
+

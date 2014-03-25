@@ -69,8 +69,14 @@ let startGame (title:string) =
     Console.Write("2: Two Players")
     Console.SetCursorPosition(0,4)
     Console.Write("3: Exit")
+    Console.SetCursorPosition(0,6)
+    Console.Write("4: Playing through Network")
 
 let renderGameScreen = renderPlayerOneScore >> renderPlayerTwoScore >> renderDivider >> renderBall >> renderPlayerOnePaddle >> renderPlayerTwoPaddle
+
+let renderWaitingForPartner () =
+    Console.SetCursorPosition(0,0)
+    Console.Write("Waiting For Partner")
 
 let render state =
     match state.Status with 
@@ -82,12 +88,8 @@ let render state =
                       state
     | PlayerTwoWon -> startGame "Player Two won"
                       state
-    | MoveTo(RunningTwoPlayer) -> Console.Clear ()
-                                  state
-    | MoveTo(RunningSinglePlayer) -> Console.Clear ()
-                                     state
-    | MoveTo(PlayerOneWon) -> Console.Clear ()
-                              state
-    | MoveTo(PlayerTwoWon) -> Console.Clear ()
-                              state
+    | MoveTo _ -> Console.Clear ()
+                  state
+    | WaitingForPartner -> renderWaitingForPartner ()
+                           state
     | _ -> state

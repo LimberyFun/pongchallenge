@@ -4,6 +4,8 @@ open PongTypes
 open PongEngine
 open PongAi
 open PongRenderer
+open PongNetworking
+open NetMQ
 
 let resetState status =
     {
@@ -19,22 +21,25 @@ let resetState status =
       PlayerTwoScore = 0
     }
 
-let rec gameloop state = 
+let rec gameloop (context:NetMQContext) (socket:Option<NetMQSocket>) state = 
     Threading.Thread.Sleep (16)
     match state.Status with
     | Exit -> ()
-    | MoveTo(RunningTwoPlayer) -> gameloop (resetState RunningTwoPlayer)
-    | MoveTo(RunningSinglePlayer) -> gameloop (resetState RunningSinglePlayer)
-    | MoveTo(PlayerOneWon) -> gameloop {state with Status = PlayerOneWon}
-    | MoveTo(PlayerTwoWon) -> gameloop {state with Status = PlayerTwoWon}
-    | RunningTwoPlayer -> state |> processPlayerOneInput |> processPlayerTwoInput |> moveBall |> bounceBall |> bounceOfPaddle |> detectScore|>winPlayer |> render |> gameloop
-    | RunningSinglePlayer -> state |> processPlayerTwoInput |> computerMove |> moveBall |> bounceBall |> bounceOfPaddle |> detectScore|>winPlayer |> render |> gameloop
-    | _ -> processBlockingInput state |> render |> gameloop
+    | MoveTo(RunningTwoPlayer) -> gameloop context None (resetState RunningTwoPlayer) 
+    | MoveTo(RunningSinglePlayer) -> gameloop context None (resetState RunningSinglePlayer) 
+    | MoveTo(PlayerOneWon) -> gameloop context None {state with Status = PlayerOneWon} 
+    | MoveTo(PlayerTwoWon) -> gameloop context None {state with Status = PlayerTwoWon} 
+    | MoveTo(WaitingForPartner) -> gameloop context (Some(context.CreateDealerSocket ())) {state with Status = WaitingForPartner} 
+    | RunningTwoPlayer -> state |> processPlayerOneInput |> processPlayerTwoInput |> moveBall |> bounceBall |> bounceOfPaddle |> detectScore|>winPlayer |> render |> gameloop context None
+    | RunningSinglePlayer -> state |> processPlayerTwoInput |> computerMove |> moveBall |> bounceBall |> bounceOfPaddle |> detectScore|>winPlayer |> render |> gameloop context None
+    | WaitingForPartner -> socket |> getSocket |> startPongNetworking
+    | _ -> processBlockingInput state |> render |> gameloop context None
 
 [<EntryPoint>]
 [<STAThreadAttribute>]
 let main argv =
     Console.CursorVisible = false |> ignore
     let initialState = resetState InitScreen
-    gameloop initialState
+    use context = NetMQContext.Create ()
+    gameloop context None initialState 
     0 // return an integer exit code
