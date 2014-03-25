@@ -26,10 +26,6 @@ let sendConnectToGameMessage addess ip (socket:NetMQSocket) =
     printfn "sending connect"
     socket.SendMessage(msg)
 
-let bindServer address (socket:NetMQSocket)  =
-    socket.Bind(address)
-    socket
-
 let rec runServer (waitingPlayers: receivedMessage list) (socket:NetMQSocket)  =
     let msg = socket.ReceiveMessage() |> createDecodedMessage
     printfn "msg %s received" (msg.ToString ())
@@ -38,7 +34,7 @@ let rec runServer (waitingPlayers: receivedMessage list) (socket:NetMQSocket)  =
     | [] -> runServer newWaitingPlayers socket
     | [_] -> runServer newWaitingPlayers socket
     | [playertwo;playerOne] ->   sendStartHostingMessage playerOne.Address socket
-                                 sendConnectToGameMessage playertwo.Address playertwo.MessageBody socket
+                                 sendConnectToGameMessage playertwo.Address playerOne.MessageBody socket
                                  printfn "Connected %A and %A" playerOne.Address playertwo.Address
                                  runServer List.empty<receivedMessage> socket
     | _ -> failwith "OOps more than two players waiting"      

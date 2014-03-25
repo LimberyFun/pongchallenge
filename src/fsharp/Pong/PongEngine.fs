@@ -17,22 +17,22 @@ let movePaddleUp previousPaddlePosition =
     | p when p <= 0.0 -> previousPaddlePosition
     | _ -> previousPaddlePosition - 1.0
 
-let movePaddleDown previousPaddlePosition =
+let movePaddleDown previousPaddlePosition paddleHeight =
     match previousPaddlePosition with
-    | p when p >= 22.0 -> previousPaddlePosition
+    | p when p >=(24.0 - paddleHeight) -> previousPaddlePosition
     | _ -> previousPaddlePosition + 1.0
 
 let playerOnePaddleUp state = 
     {state with PlayerOnePaddlePosition = movePaddleUp state.PlayerOnePaddlePosition; PreviousPlayerOnePaddlePosition = state.PlayerOnePaddlePosition}
 
 let playerOnePaddleDown state =
-    {state with PlayerOnePaddlePosition = movePaddleDown state.PlayerOnePaddlePosition; PreviousPlayerOnePaddlePosition = state.PlayerOnePaddlePosition}
+    {state with PlayerOnePaddlePosition = movePaddleDown state.PlayerOnePaddlePosition state.PaddleHeight; PreviousPlayerOnePaddlePosition = state.PlayerOnePaddlePosition}
 
 let playerTwoPaddleUp state = 
     {state with PlayerTwoPaddlePosition = movePaddleUp state.PlayerTwoPaddlePosition; PreviousPlayerTwoPaddlePosition = state.PlayerTwoPaddlePosition}
 
 let playerTwoPaddleDown state =
-    {state with PlayerTwoPaddlePosition = movePaddleDown state.PlayerTwoPaddlePosition; PreviousPlayerTwoPaddlePosition = state.PlayerTwoPaddlePosition}
+    {state with PlayerTwoPaddlePosition = movePaddleDown state.PlayerTwoPaddlePosition state.PaddleHeight; PreviousPlayerTwoPaddlePosition = state.PlayerTwoPaddlePosition}
   
 let userInputPlayerOneUp state =
     if Keyboard.IsKeyDown(Key.A) then playerOnePaddleUp state else state
@@ -86,7 +86,7 @@ let moveBall state =
 let (|BouncesFromTop|BouncesFromBottom|NoBounce|) position =
     match position with
     | p when p <= 0.0 -> BouncesFromTop
-    | p when p >= 25.0 -> BouncesFromBottom
+    | p when p > 24.0 -> BouncesFromBottom
     | _ -> NoBounce
 
 let getBouncedPositionAndDirectionFromTop position direction =
@@ -123,15 +123,15 @@ let detectScore state =
     | p when p > 79.0 -> state |> scorePlayerOne
     | _  -> state
 
-let paddleIntersect paddlePosition ballPosition =
+let paddleIntersect paddlePosition ballPosition paddleHeight =
     match ballPosition.top with
-    | p when p >= paddlePosition && p <= paddlePosition + 2.0  -> true
+    | p when p >= paddlePosition && p <= paddlePosition + paddleHeight  -> true
     | _ -> false
 
 let (|HitPlayerOnePaddle|HitPlayerTwoPaddle|NoHit|) state = 
     match state with
-    | s when s.BallPosition.left <= 2.0 && paddleIntersect s.PlayerOnePaddlePosition s.BallPosition -> HitPlayerOnePaddle
-    | s when s.BallPosition.left >= 77.0 && paddleIntersect s.PlayerTwoPaddlePosition s.BallPosition -> HitPlayerTwoPaddle
+    | s when s.BallPosition.left <= 2.0 && paddleIntersect s.PlayerOnePaddlePosition s.BallPosition s.PaddleHeight -> HitPlayerOnePaddle
+    | s when s.BallPosition.left >= 77.0 && paddleIntersect s.PlayerTwoPaddlePosition s.BallPosition s.PaddleHeight -> HitPlayerTwoPaddle
     | _ -> NoHit
 
 let reverseBallDirection direction =
