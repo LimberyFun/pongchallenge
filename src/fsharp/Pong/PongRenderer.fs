@@ -71,12 +71,14 @@ let startGame (title:string) =
     Console.Write("3: Exit")
     Console.SetCursorPosition(0,6)
     Console.Write("4: Playing through Network")
+    Console.SetCursorPosition(0,7)
+    Console.Write("5: Act as pong server")
 
 let renderGameScreen = renderPlayerOneScore >> renderPlayerTwoScore >> renderDivider >> renderBall >> renderPlayerOnePaddle >> renderPlayerTwoPaddle
 
-let renderWaitingForPartner () =
+let renderWaitingForPartner state =
     Console.SetCursorPosition(0,0)
-    Console.Write("Waiting For Partner")
+    Console.Write("Waiting For Partner to connect to server at {0}", state.ServerAddressAndPort)
 
 let render state =
     match state.Status with 
@@ -90,6 +92,19 @@ let render state =
                       state
     | MoveTo _ -> Console.Clear ()
                   state
-    | WaitingForPartner -> renderWaitingForPartner ()
+    | WaitingForPartner -> renderWaitingForPartner state
                            state
+    | BePongServer -> Console.SetCursorPosition(0,0)
+                      Console.Write("Acting as registry server on {0}:{1}", state.OwnIpAddress, state.NetworkPort)
+                      state
+    | GetOwnPortAndIp _ -> Console.SetCursorPosition(0,0)
+                           Console.Write("Please enter port to use: ")
+                           Console.CursorVisible <- true
+                           state
+    | GetServerAddressAndPort -> Console.SetCursorPosition(0,0)
+                                 Console.Write("Please enter address and port of server to connect to")
+                                 Console.SetCursorPosition(0,1)
+                                 Console.Write("Format: xxx.xxx.xxx.xxx:yyyy: ")
+                                 Console.CursorVisible <- true
+                                 state
     | _ -> state

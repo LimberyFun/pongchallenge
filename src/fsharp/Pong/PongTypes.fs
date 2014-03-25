@@ -8,6 +8,9 @@ type GameStatus =
     | RunningNetworkPlayerAsHost
     | RunningNetworkPlayerAsClient
     | WaitingForPartner
+    | BePongServer
+    | GetOwnPortAndIp of GameStatus
+    | GetServerAddressAndPort
     | PlayerOneWon
     | PlayerTwoWon
     | MoveTo of GameStatus
@@ -16,7 +19,7 @@ type GameStatus =
 type PaddlePosition = double
 type Score = int
 
-type BallPosition ={left : double;top : double}
+type BallPosition ={left : double; top : double}
   
 type Direction = {horizontalSpeed : double; verticalSpeed : double}
 type GameState = 
@@ -31,5 +34,8 @@ type GameState =
       PreviousPlayerTwoPaddlePosition : PaddlePosition
       PlayerOneScore : Score
       PlayerTwoScore : Score
+      NetworkPort : string
+      OwnIpAddress : string
+      ServerAddressAndPort : string
     }
 

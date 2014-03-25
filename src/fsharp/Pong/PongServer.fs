@@ -1,5 +1,6 @@
 ﻿module PongServer
 open PongMessage
+open PongNetworking
 open NetMQ
 
 type receivedMessage = 
@@ -12,12 +13,9 @@ let createDecodedMessage (msg:NetMQMessage) =
     let messagetype = (msg.Pop ()).ConvertToString ()
     let msgBody = (msg.Pop ()).Buffer
     {receivedMessage.Address = address; MessageType = messagetype; MessageBody=msgBody}
- 
-let encode = string >> System.Text.Encoding.UTF8.GetBytes
-let decode = System.Text.Encoding.UTF8.GetString
 
 let sendStartHostingMessage address (socket:NetMQSocket) =
-    let msgtype = StartHostingNeworkGame |> getMessageType |> encode
+    let msgtype = StartHostingNetworkGame |> getMessageType |> encode
     let msg = new NetMQMessage([|address;msgtype|])
     printfn "sending host"
     socket.SendMessage(msg)
@@ -28,26 +26,19 @@ let sendConnectToGameMessage addess ip (socket:NetMQSocket) =
     printfn "sending connect"
     socket.SendMessage(msg)
 
-let rec mainloop (socket:NetMQSocket) (waitingPlayers: receivedMessage list) =
+let bindServer address (socket:NetMQSocket)  =
+    socket.Bind(address)
+    socket
+
+let rec runServer (waitingPlayers: receivedMessage list) (socket:NetMQSocket)  =
     let msg = socket.ReceiveMessage() |> createDecodedMessage
     printfn "msg %s received" (msg.ToString ())
     let newWaitingPlayers = msg :: waitingPlayers
     match newWaitingPlayers with
-    | [] -> mainloop socket newWaitingPlayers
-    | [_] -> mainloop socket newWaitingPlayers
+    | [] -> runServer newWaitingPlayers socket
+    | [_] -> runServer newWaitingPlayers socket
     | [playertwo;playerOne] ->   sendStartHostingMessage playerOne.Address socket
                                  sendConnectToGameMessage playertwo.Address playertwo.MessageBody socket
                                  printfn "Connected %A and %A" playerOne.Address playertwo.Address
-                                 mainloop socket List.empty<receivedMessage>
-    | _ -> failwith "OOps more than two players waiting"                                
-
-[<EntryPoint>]
-let main argv =  
-    printfn "hello"
-    use context = NetMQContext.Create ()
-    use server = context.CreateRouterSocket ()
-    server.Bind("tcp://127.0.0.1:9999")
-    let waitingPlayers = List.empty<receivedMessage>
-    mainloop server waitingPlayers
-            
-    0 // return an integer exit code
+                                 runServer List.empty<receivedMessage> socket
+    | _ -> failwith "OOps more than two players waiting"      

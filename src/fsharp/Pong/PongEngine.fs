@@ -72,7 +72,8 @@ let processBlockingInput state =
         | '1' -> {state with Status = MoveTo(RunningSinglePlayer)}
         | '2' -> {state with Status = MoveTo(RunningTwoPlayer)}
         | '3' -> {state with Status = Exit}
-        | '4' -> {state with Status= MoveTo(WaitingForPartner)}
+        | '4' -> {state with Status = MoveTo(GetServerAddressAndPort)}
+        | '5' -> {state with Status = MoveTo(GetOwnPortAndIp(BePongServer))}
         | _   -> state
 
 

@@ -13,7 +13,7 @@ type GameStateUpdate =
 
 type Message =
     | RequestNetworkGame of string
-    | StartHostingNeworkGame
+    | StartHostingNetworkGame
     | ConnectToNetworkGame of string
     | StartGame
     | ServerGameUpdate of GameStateUpdate
@@ -23,7 +23,7 @@ type Message =
 let getMessageType message =
     match message with
     | RequestNetworkGame _ -> "rqnetworkgame"
-    | StartHostingNeworkGame -> "startHostingNetworkgame"
+    | StartHostingNetworkGame -> "startHostingNetworkgame"
     | ConnectToNetworkGame _ -> "connectToGame"
     | StartGame -> "startGame"
     | ServerGameUpdate _ -> "gameupdate"

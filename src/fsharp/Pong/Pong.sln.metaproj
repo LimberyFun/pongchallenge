@@ -23,12 +23,21 @@
     <CurrentSolutionConfigurationContents>
       <SolutionConfiguration xmlns="">
   <ProjectConfiguration Project="{69DDECCB-872B-4AB5-BC41-774DD036D51E}" AbsolutePath="C:\Users\Vidar\Documents\Visual Studio 11\Projects\pongchallenge\src\fsharp\Pong\Pong.fsproj" BuildProjectInSolution="True">Debug|AnyCPU</ProjectConfiguration>
+  <ProjectConfiguration Project="{871253AE-FC86-4628-945E-AE9CFA449964}" AbsolutePath="C:\Users\Vidar\Documents\Visual Studio 11\Projects\pongchallenge\src\fsharp\Pong\..\PongServerTester\PongServerTester.fsproj" BuildProjectInSolution="True">Debug|AnyCPU</ProjectConfiguration>
 </SolutionConfiguration>
     </CurrentSolutionConfigurationContents>
   </PropertyGroup>
   <ItemDefinitionGroup />
   <ItemGroup>
     <ProjectReference Include="C:\Users\Vidar\Documents\Visual Studio 11\Projects\pongchallenge\src\fsharp\Pong\Pong.fsproj">
+      <ToolsVersion>
+      </ToolsVersion>
+      <SkipNonexistentProjects>False</SkipNonexistentProjects>
+      <AdditionalProperties>Configuration=Debug; Platform=AnyCPU; VisualStudioVersion=11.0</AdditionalProperties>
+      <Configuration>Debug</Configuration>
+      <Platform>AnyCPU</Platform>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\Vidar\Documents\Visual Studio 11\Projects\pongchallenge\src\fsharp\Pong\..\PongServerTester\PongServerTester.fsproj">
       <ToolsVersion>
       </ToolsVersion>
       <SkipNonexistentProjects>False</SkipNonexistentProjects>
@@ -77,5 +86,21 @@
   </Target>
   <Target Name="Pong:Publish">
     <MSBuild Condition="'%(ProjectReference.Identity)' == 'C:\Users\Vidar\Documents\Visual Studio 11\Projects\pongchallenge\src\fsharp\Pong\Pong.fsproj'" Projects="@(ProjectReference)" Targets="Publish" BuildInParallel="True" ToolsVersion="$(ProjectToolsVersion)" Properties="Configuration=Debug; Platform=AnyCPU;BuildingSolutionFile=true; CurrentSolutionConfigurationContents=$(CurrentSolutionConfigurationContents); SolutionDir=$(SolutionDir); SolutionExt=$(SolutionExt); SolutionFileName=$(SolutionFileName); SolutionName=$(SolutionName); SolutionPath=$(SolutionPath)" />
+  </Target>
+  <Target Name="PongServerTester" Outputs="@(PongServerTesterBuildOutput)">
+    <MSBuild Condition="'%(ProjectReference.Identity)' == 'C:\Users\Vidar\Documents\Visual Studio 11\Projects\pongchallenge\src\fsharp\Pong\..\PongServerTester\PongServerTester.fsproj'" Projects="@(ProjectReference)" BuildInParallel="True" ToolsVersion="$(ProjectToolsVersion)" Properties="Configuration=Debug; Platform=AnyCPU;BuildingSolutionFile=true; CurrentSolutionConfigurationContents=$(CurrentSolutionConfigurationContents); SolutionDir=$(SolutionDir); SolutionExt=$(SolutionExt); SolutionFileName=$(SolutionFileName); SolutionName=$(SolutionName); SolutionPath=$(SolutionPath)">
+      <Output TaskParameter="TargetOutputs" ItemName="PongServerTesterBuildOutput" />
+    </MSBuild>
+  </Target>
+  <Target Name="PongServerTester:Clean">
+    <MSBuild Condition="'%(ProjectReference.Identity)' == 'C:\Users\Vidar\Documents\Visual Studio 11\Projects\pongchallenge\src\fsharp\Pong\..\PongServerTester\PongServerTester.fsproj'" Projects="@(ProjectReference)" Targets="Clean" BuildInParallel="True" ToolsVersion="$(ProjectToolsVersion)" Properties="Configuration=Debug; Platform=AnyCPU;BuildingSolutionFile=true; CurrentSolutionConfigurationContents=$(CurrentSolutionConfigurationContents); SolutionDir=$(SolutionDir); SolutionExt=$(SolutionExt); SolutionFileName=$(SolutionFileName); SolutionName=$(SolutionName); SolutionPath=$(SolutionPath)" />
+  </Target>
+  <Target Name="PongServerTester:Rebuild" Outputs="@(PongServerTesterBuildOutput)">
+    <MSBuild Condition="'%(ProjectReference.Identity)' == 'C:\Users\Vidar\Documents\Visual Studio 11\Projects\pongchallenge\src\fsharp\Pong\..\PongServerTester\PongServerTester.fsproj'" Projects="@(ProjectReference)" Targets="Rebuild" BuildInParallel="True" ToolsVersion="$(ProjectToolsVersion)" Properties="Configuration=Debug; Platform=AnyCPU;BuildingSolutionFile=true; CurrentSolutionConfigurationContents=$(CurrentSolutionConfigurationContents); SolutionDir=$(SolutionDir); SolutionExt=$(SolutionExt); SolutionFileName=$(SolutionFileName); SolutionName=$(SolutionName); SolutionPath=$(SolutionPath)">
+      <Output TaskParameter="TargetOutputs" ItemName="PongServerTesterBuildOutput" />
+    </MSBuild>
+  </Target>
+  <Target Name="PongServerTester:Publish">
+    <MSBuild Condition="'%(ProjectReference.Identity)' == 'C:\Users\Vidar\Documents\Visual Studio 11\Projects\pongchallenge\src\fsharp\Pong\..\PongServerTester\PongServerTester.fsproj'" Projects="@(ProjectReference)" Targets="Publish" BuildInParallel="True" ToolsVersion="$(ProjectToolsVersion)" Properties="Configuration=Debug; Platform=AnyCPU;BuildingSolutionFile=true; CurrentSolutionConfigurationContents=$(CurrentSolutionConfigurationContents); SolutionDir=$(SolutionDir); SolutionExt=$(SolutionExt); SolutionFileName=$(SolutionFileName); SolutionName=$(SolutionName); SolutionPath=$(SolutionPath)" />
   </Target>
 </Project>
