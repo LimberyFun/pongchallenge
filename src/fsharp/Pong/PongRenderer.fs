@@ -18,10 +18,12 @@ let deletePaddle left top =
 let renderPlayerOnePaddle state =
     deletePaddle 1 (System.Convert.ToInt32(Math.Round(state.PreviousPlayerOnePaddlePosition)))
     writePaddle 1 (System.Convert.ToInt32(Math.Round(state.PlayerOnePaddlePosition)))
+    state
 
 let renderPlayerTwoPaddle state =
     deletePaddle 78 (System.Convert.ToInt32(Math.Round(state.PreviousPlayerTwoPaddlePosition)))
     writePaddle 78 (System.Convert.ToInt32(Math.Round(state.PlayerTwoPaddlePosition)))
+    state
 
 let decideScoreColor myScore otherPlayerScore defaultColour = 
     match (myScore, otherPlayerScore) with
@@ -34,18 +36,21 @@ let renderPlayerOneScore state =
     Console.ForegroundColor <- decideScoreColor state.PlayerOneScore state.PlayerTwoScore colour
     renderChar 10 2 (state.PlayerOneScore.ToString ())
     Console.ForegroundColor <- colour
+    state
 
 let renderPlayerTwoScore state  =
     let colour = Console.ForegroundColor
     Console.ForegroundColor <- decideScoreColor state.PlayerTwoScore state.PlayerOneScore colour
     renderChar 60 2 (state.PlayerTwoScore.ToString ())
     Console.ForegroundColor <- colour
+    state
    
-let renderDivider () =
+let renderDivider state =
     let colour = Console.ForegroundColor
     Console.ForegroundColor <- ConsoleColor.Blue
     [0..25] |> List.filter (fun e -> (e % 2  = 0)) |> List.iter (fun e -> renderChar 39 e "|")
     Console.ForegroundColor <- colour
+    state
 
 let renderBall state =
     let colour = Console.ForegroundColor
@@ -53,49 +58,29 @@ let renderBall state =
     renderChar (System.Convert.ToInt32(Math.Round(state.PreviousBallPosition.left))) (System.Convert.ToInt32(Math.Round(state.PreviousBallPosition.top))) " "
     renderChar (System.Convert.ToInt32(Math.Round(state.BallPosition.left))) (System.Convert.ToInt32(Math.Round(state.BallPosition.top))) "@"
     Console.ForegroundColor <- colour
+    state
+
+let startGame (title:string) =
+    Console.SetCursorPosition(0,0)
+    Console.Write(title)
+    Console.SetCursorPosition(0,2)
+    Console.Write("1: Single Player")
+    Console.SetCursorPosition(0,3)
+    Console.Write("2: Two Players")
+    Console.SetCursorPosition(0,4)
+    Console.Write("3: Exit")
+
+let renderGameScreen = renderPlayerOneScore >> renderPlayerTwoScore >> renderDivider >> renderBall >> renderPlayerOnePaddle >> renderPlayerTwoPaddle
 
 let render state =
     match state.Status with 
-    | InitScreen -> Console.SetCursorPosition(0,0)
-                    Console.Write("Pong game")
-                    Console.SetCursorPosition(0,2)
-                    Console.Write("1: Single Player")
-                    Console.SetCursorPosition(0,3)
-                    Console.Write("2: Two Players")
-                    Console.SetCursorPosition(0,4)
-                    Console.Write("3: Exit")
+    | InitScreen -> startGame "Pong Game"
                     state
-    | RunningTwoPlayer -> renderPlayerOneScore state
-                          renderPlayerTwoScore state
-                          renderDivider ()    
-                          renderBall state        
-                          renderPlayerOnePaddle state
-                          renderPlayerTwoPaddle state                                    
-                          state
-    | RunningSinglePlayer -> renderPlayerOneScore state
-                             renderPlayerTwoScore state
-                             renderDivider ()    
-                             renderBall state        
-                             renderPlayerOnePaddle state
-                             renderPlayerTwoPaddle state                                    
-                             state
-    | PlayerOneWon -> Console.SetCursorPosition(0,0)
-                      Console.Write("Player One won")
-                      Console.SetCursorPosition(0,2)
-                      Console.Write("1: Single Player")
-                      Console.SetCursorPosition(0,3)
-                      Console.Write("2: Two Players")
-                      Console.SetCursorPosition(0,4)
-                      Console.Write("3: Exit")
+    | RunningTwoPlayer -> state |> renderGameScreen
+    | RunningSinglePlayer -> state |> renderGameScreen
+    | PlayerOneWon -> startGame "Player One won"
                       state
-    | PlayerTwoWon -> Console.SetCursorPosition(0,0)
-                      Console.Write("Player Two won")
-                      Console.SetCursorPosition(0,2)
-                      Console.Write("1: Single Player")
-                      Console.SetCursorPosition(0,3)
-                      Console.Write("2: Two Players")
-                      Console.SetCursorPosition(0,4)
-                      Console.Write("3: Exit")
+    | PlayerTwoWon -> startGame "Player Two won"
                       state
     | MoveTo(RunningTwoPlayer) -> Console.Clear ()
                                   state
@@ -105,5 +90,4 @@ let render state =
                               state
     | MoveTo(PlayerTwoWon) -> Console.Clear ()
                               state
-
     | _ -> state
