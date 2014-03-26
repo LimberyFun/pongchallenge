@@ -80,6 +80,10 @@ namespace PongGame
             OnGameUpdateReceived += OnGameUpdate;
             OnControlUpdateReceived += OnControlUpdate;
             OnMessageReceived += OnMessage;
+            _networkManager = new NetworkManager(SocketType.Dealer);
+            _networkManager.OnDataReceived += OnDataReceived;
+            _networkManagerPeer = new NetworkManager(SocketType.Reply);
+            _networkManagerPeer.OnDataReceived += OnDataReceived;
             InitGame();
         }
        
@@ -115,11 +119,7 @@ namespace PongGame
                 _timer.Stop();
             _timer.Interval = TimeSpan.FromMilliseconds(10);
             _timer.Start();
-
-            _networkManager = new NetworkManager(SocketType.Dealer);
-            _networkManager.OnDataReceived +=  OnDataReceived;
-            _networkManagerPeer = new NetworkManager(SocketType.Reply);
-            _networkManagerPeer.OnDataReceived += OnDataReceived;
+           
             BeginConnectingToNetwork();
         }
 
@@ -162,11 +162,10 @@ namespace PongGame
             while (_networkManager.IsConnected)
             {
                 _networkManager.Connect();
-                Thread.Sleep(100);
             }
 
             if (!_beSlave)
-                _networkManager.Send(new Message("rqnetworkgame", MyAddress));
+                _networkManager.Send(new Message("rqnetworkgame", MyAddress), true);
         }
 
         private void OnDataReceived(string data)
