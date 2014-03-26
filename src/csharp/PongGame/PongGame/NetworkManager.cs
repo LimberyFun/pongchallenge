@@ -5,19 +5,27 @@ using NetMQ.zmq;
 
 namespace PongGame
 {
+    public enum SocketType
+    {
+        Dealer,
+        Reply
+    }
+
     public interface INetworkManager : IDisposable
     {
         Action<string> OnDataReceived { get; set; }
         bool IsConnected { get; }
         void Send(Message message, bool needResponse = false);
         string Receieve();
+        void Connect(string address);
         void Connect();
     }
 
-    public class NetworkManager : INetworkManager, IDisposable
+    public class NetworkManager : INetworkManager
     {
         private NetMQSocket _clientSocket;
         private bool _isConnected;
+        private readonly SocketType _socketType;
 
         public Action<string> OnDataReceived { get; set; }
 
@@ -26,12 +34,20 @@ namespace PongGame
             get { return _isConnected; }
         }
 
+        public NetworkManager(SocketType socketType)
+        {
+            _socketType = socketType;
+        }
+
         public void Send(Message message, bool needResponse = false)
         {
             if (!_isConnected)
                 Connect();
 
             Console.WriteLine("Sending request {0}...", message);
+            if (_socketType == SocketType.Dealer)
+                _clientSocket.Send(Guid.NewGuid().ToByteArray());
+
             _clientSocket.Send(message.MessageType, sendMore: true);
             _clientSocket.Send(message.MessageText);
 
@@ -60,15 +76,24 @@ namespace PongGame
             return replyString;
         }
 
-        public void Connect()
+        public void Connect(string address)
         {
             using (var context = NetMQContext.Create())
-                _clientSocket = context.CreateSocket(ZmqSocketType.Rep);
-           
-            _clientSocket.Connect("tcp://localhost:5555");
+            {
+                if (_socketType == SocketType.Dealer)
+                    _clientSocket = context.CreateDealerSocket();
+                if (_socketType == SocketType.Reply)
+                    _clientSocket = context.CreateSocket(ZmqSocketType.Rep);
+            }
+
+            _clientSocket.Connect(address);
             _isConnected = true;
         }
 
+        public void Connect()
+        {
+           Connect("tcp://localhost:5555");
+        }
 
         public void Dispose()
         {

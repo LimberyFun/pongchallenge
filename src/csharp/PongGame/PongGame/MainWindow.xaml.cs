@@ -29,7 +29,9 @@ namespace PongGame
         private bool _levelBreak;
         private bool _isSinglePlayer = false;
         private INetworkManager _networkManager;
+        private INetworkManager _networkManagerPeer;
         private bool _beSlave;
+        private const string MyAddress = "10.10.1.29:1118";
 
         public Action<Message> OnMessageReceived;
         public Action<GameUpdate> OnGameUpdateReceived;
@@ -114,8 +116,10 @@ namespace PongGame
             _timer.Interval = TimeSpan.FromMilliseconds(10);
             _timer.Start();
 
-            _networkManager = new NetworkManager();
+            _networkManager = new NetworkManager(SocketType.Dealer);
             _networkManager.OnDataReceived +=  OnDataReceived;
+            _networkManagerPeer = new NetworkManager(SocketType.Reply);
+            _networkManagerPeer.OnDataReceived += OnDataReceived;
             BeginConnectingToNetwork();
         }
 
@@ -133,13 +137,23 @@ namespace PongGame
         {
             if (message.MessageType.ToLower() == "game over")
             {
-                
+                MessageBox.Show("Game over!");
             }
             else if (message.MessageType.ToLower() == "connecttogame")
             {
+                while (_networkManagerPeer.IsConnected)
+                    _networkManagerPeer.Connect(message.MessageText);
+                
+                _networkManager.Dispose();
+
                 // Send start game command
-                _networkManager.Send(new Message("startGame", string.Empty));
+                _networkManagerPeer.Send(new Message("startGame", string.Empty));
                 _beSlave = true;
+            }
+            else if (message.MessageType.ToLower() == "starthostingnetworkgame")
+            {
+                _beSlave = false;
+                _networkManager.Dispose();
             }
         }
 
@@ -152,9 +166,7 @@ namespace PongGame
             }
 
             if (!_beSlave)
-                _networkManager.Send(new Message("rqnetworkgame", "10.10.1.29:1118"));
-
-            _networkManager.Send(new Message("startHostingNetworkgame", string.Empty));
+                _networkManager.Send(new Message("rqnetworkgame", MyAddress));
         }
 
         private void OnDataReceived(string data)
@@ -353,12 +365,14 @@ namespace PongGame
         {
             if(_networkManager != null)
                 _networkManager.Dispose();
+            if (_networkManagerPeer != null)
+                _networkManagerPeer.Dispose();
         }
 
         private void SendGameUpdate(int ballX, int ballY, int player1Paddle, int player2Paddle,
             int paddleHeight, int player1Score, int player2Score)
         {
-            _networkManager.Send(new GameUpdate()
+            _networkManagerPeer.Send(new GameUpdate()
             {
                 HorizontalPosition = ballX,
                 VerticalPosition = ballY,
