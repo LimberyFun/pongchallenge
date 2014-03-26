@@ -8,7 +8,8 @@ namespace PongGame
     public enum SocketType
     {
         Dealer,
-        Reply
+        Reply,
+        Request
     }
 
     public interface INetworkManager : IDisposable
@@ -16,6 +17,7 @@ namespace PongGame
         Action<string> OnDataReceived { get; set; }
         bool IsConnected { get; }
         void Send(Message message, bool needResponse = false);
+        void Send(GameUpdate message, bool needResponse = false);
         string Receieve();
         void Connect(string address);
         void Connect();
@@ -56,6 +58,23 @@ namespace PongGame
             if (needResponse) Receieve();
         }
 
+        public void Send(GameUpdate message, bool needResponse = false)
+        {
+            if (!_isConnected)
+                Connect();
+                
+            _clientSocket.SendMore(message.MessageType)
+               .SendMore(message.HorizontalPosition.ToString())
+               .SendMore(message.VerticalPosition.ToString())
+               .SendMore(message.Player1PadPosition.ToString())
+               .SendMore(message.Player2PadPosition.ToString())
+               .SendMore(message.PadHeight.ToString())
+               .SendMore(message.Player1Score.ToString())
+               .Send(message.Player2Score.ToString());
+
+            if (needResponse) Receieve();
+        }
+
         public string Receieve()
         {
             if (!_isConnected)
@@ -81,17 +100,27 @@ namespace PongGame
         public void Connect(string address)
         {
             if (_socketType == SocketType.Dealer)
+            {
                 _clientSocket = context.CreateDealerSocket();
+                _clientSocket.Connect(address);
+            }
             if (_socketType == SocketType.Reply)
-                _clientSocket = context.CreateSocket(ZmqSocketType.Rep);
+            {
+                _clientSocket = context.CreateResponseSocket();
+                _clientSocket.Bind(address);
+            }
+            if (_socketType == SocketType.Request)
+            {
+                _clientSocket = context.CreateRequestSocket();
+                _clientSocket.Connect(address);
+            }
 
-            _clientSocket.Connect(address);
             _isConnected = true;
         }
 
         public void Connect()
         {
-           Connect("tcp://127.0.0.1:5");
+           Connect("tcp://127.0.0.1:5555");
         }
 
         public void Dispose()
@@ -101,6 +130,7 @@ namespace PongGame
             if (context != null)
                 context.Dispose();
         }
+        
     }
 
     /*

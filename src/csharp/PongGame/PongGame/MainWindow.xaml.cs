@@ -28,10 +28,11 @@ namespace PongGame
         private bool _levelBreak;
         private bool _isSinglePlayer = false;
         private readonly INetworkManager _networkManager;
-        private readonly INetworkManager _networkManagerPeer;
+        private INetworkManager _networkManagerPeer;
         private bool _beSlave;
         private bool _peered = false;
-        private const string MyAddress = "10.10.1.29:1118";
+        private const string MyAddress = "127.0.0.1:1118";
+        private bool _networkMode = false;
 
         public Action<Message> OnMessageReceived;
         public Action<GameUpdate> OnGameUpdateReceived;
@@ -82,19 +83,27 @@ namespace PongGame
             OnMessageReceived += OnMessage;
             _networkManager = new NetworkManager(SocketType.Dealer);
             _networkManager.OnDataReceived += OnDataReceived;
-            _networkManagerPeer = new NetworkManager(SocketType.Reply);
-            _networkManagerPeer.OnDataReceived += OnDataReceived;
             InitGame();
         }
        
         private void MainWindow_OnKeyDown(object sender, KeyboardEventArgs e)
         {
-            if (Keyboard.IsKeyDown(Key.A) && _player1.Y - _padSpeed >= 0) _player1.Y -= _padSpeed;
-            if (Keyboard.IsKeyDown(Key.Z) && _player1.Y + _padSpeed <= MainCanvas.ActualHeight - _player1.PadLength)
-                _player1.Y += _padSpeed;
+            if (!_networkMode)
+            {
+                if (Keyboard.IsKeyDown(Key.A) && _player1.Y - _padSpeed >= 0) _player1.Y -= _padSpeed;
+                if (Keyboard.IsKeyDown(Key.Z) && _player1.Y + _padSpeed <= MainCanvas.ActualHeight - _player1.PadLength)
+                    _player1.Y += _padSpeed;
+            }
             if (Keyboard.IsKeyDown(Key.Up) && _player2.Y - _padSpeed >= 0) _player2.Y -= _padSpeed;
             if (Keyboard.IsKeyDown(Key.Down) && _player2.Y + _padSpeed <= (MainCanvas.ActualHeight - _player2.PadLength))
                 _player2.Y += _padSpeed;
+        }
+
+        private void UpdatePlayer1Pad(ControlInput controlInput)
+        {
+            if (controlInput == ControlInput.Up && _player1.Y - _padSpeed >= 0) _player1.Y -= 10;
+            if (controlInput == ControlInput.Down && _player1.Y + _padSpeed <= MainCanvas.ActualHeight - _player1.PadLength)
+                _player1.Y += 10;
         }
 
         private void InitGame()
@@ -119,10 +128,12 @@ namespace PongGame
             
             if(_timer.IsEnabled)
                 _timer.Stop();
+                
             _timer.Interval = TimeSpan.FromMilliseconds(10);
             _timer.Start();
            
-            BeginConnectingToNetwork();
+            if(_networkMode)
+                BeginConnectingToNetwork();
         }
 
         private void OnGameUpdate(GameUpdate gameUpdate)
@@ -132,7 +143,7 @@ namespace PongGame
 
         private void OnControlUpdate(ControlInput controlInput)
         {
-            throw new NotImplementedException();
+            UpdatePlayer1Pad(controlInput);
         }
 
         private void OnMessage(Message message)
@@ -143,6 +154,9 @@ namespace PongGame
             }
             else if (message.MessageType.ToLower() == "connecttogame")
             {
+                _networkManagerPeer = new NetworkManager(SocketType.Request);
+                _networkManagerPeer.OnDataReceived -= OnDataReceived;
+                _networkManagerPeer.OnDataReceived += OnDataReceived;
                 while (!_networkManagerPeer.IsConnected)
                     _networkManagerPeer.Connect("tcp://" + message.MessageText);
                 
@@ -150,14 +164,21 @@ namespace PongGame
                 _peered = true;
 
                 // Send start game command
-                _networkManagerPeer.Send(new Message("startgame", string.Empty));
+                _networkManagerPeer.Send(new Message("startgame", string.Empty),true);
                 _beSlave = true;
             }
             else if (message.MessageType.ToLower() == "starthostingnetworkgame")
             {
+                _networkManagerPeer = new NetworkManager(SocketType.Reply);
+                _networkManagerPeer.OnDataReceived -= OnDataReceived;
+                _networkManagerPeer.OnDataReceived += OnDataReceived;
+                while (!_networkManagerPeer.IsConnected)
+                    _networkManagerPeer.Connect("tcp://" + MyAddress);
                 _peered = true;
                 _beSlave = false;
+                
                 _networkManager.Dispose();
+                _networkManagerPeer.Receieve();
             }
         }
 
@@ -179,7 +200,7 @@ namespace PongGame
             if (data.ToLower().StartsWith("gameupdate"))
             {
                 var s = data.Split(':');
-                if (s.Length == 8)
+                if (s.Length == 9)
                 {
                     if (OnGameUpdateReceived != null)
                     {
@@ -200,7 +221,7 @@ namespace PongGame
             if (data.ToLower().StartsWith("control"))
             {
                 var s = data.Split(':');
-                if (s.Length == 2)
+                if (s.Length == 3)
                 {
                     if (OnControlUpdateReceived != null)
                     {
@@ -222,6 +243,11 @@ namespace PongGame
                     if (OnMessageReceived != null)
                         OnMessageReceived(new Message() {MessageType = "connecttogame", MessageText = s[1] + ":" + s[2]});
                 }
+            }
+            if (data.ToLower().StartsWith("starthostingnetworkgame"))
+            {
+                if (OnMessageReceived != null)
+                    OnMessageReceived(new Message() { MessageType = "starthostingnetworkgame" });
             }
         }
 
@@ -294,9 +320,6 @@ namespace PongGame
         private void MovePad(int yPosition)
         {
             _player1.Y = yPosition;
-            if ((!_beSlave) && _peered)
-                SendGameUpdate((int)_ball.X, (int)_ball.Y, _player1.Y, _player2.Y, _player1.PadLength, _lpoints,
-                    _rpoints);
         }
 
         private void ChangeAngle()
@@ -347,6 +370,7 @@ namespace PongGame
         private void MenuItem_Click_5(object sender, RoutedEventArgs e)
         {
             _isSinglePlayer = false;
+                
             MenuSingle.IsChecked = false;
             MenuDouble.IsChecked = true;
             InitGame();
@@ -372,19 +396,25 @@ namespace PongGame
                 _networkManagerPeer.Dispose();
         }
 
+        private void MenuItem_OnClick(object sender, RoutedEventArgs e)
+        {
+            _networkMode = true;
+            InitGame();
+        }
+
         private void SendGameUpdate(int ballX, int ballY, int player1Paddle, int player2Paddle,
             int paddleHeight, int player1Score, int player2Score)
         {
-            _networkManagerPeer.Send(new GameUpdate("gameupdate", string.Empty)
+            _networkManagerPeer.Send(new GameUpdate("gameupdate",string.Empty)
             {
-                HorizontalPosition = ballX,
-                VerticalPosition = ballY,
-                Player1PadPosition = player1Paddle,
-                Player2PadPosition = player2Paddle,
-                PadHeight = paddleHeight,
+                HorizontalPosition = (ballX * 1000) /800,
+                VerticalPosition = (ballY * 1000)/475,
+                Player1PadPosition = (player1Paddle * 1000) / 475,
+                Player2PadPosition = (player2Paddle * 1000) / 475,
+                PadHeight = (paddleHeight * 1000) / 475,
                 Player1Score = player1Score,
                 Player2Score = player2Score
-            });
+            },true);
         }
     }
 }

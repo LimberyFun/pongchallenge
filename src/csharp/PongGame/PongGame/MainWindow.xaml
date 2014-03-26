@@ -17,6 +17,8 @@
                     <MenuItem Name="MenuDouble" Header="Double Player" IsChecked="True" Click="MenuItem_Click_5" ></MenuItem>
                 </MenuItem>
                 <Separator></Separator>
+                <MenuItem Header="Network Mode" Click="MenuItem_OnClick" ></MenuItem>
+                <Separator></Separator>
                 <MenuItem Header="Exit" Click="MenuItem_Click_3" ></MenuItem>
          </MenuItem>
      </Menu>
