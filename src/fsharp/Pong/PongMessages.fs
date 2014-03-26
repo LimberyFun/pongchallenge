@@ -24,9 +24,9 @@ type Message =
 let getMessageType message =
     match message with
     | RequestNetworkGame _ -> "rqnetworkgame"
-    | StartHostingNetworkGame -> "startHostingNetworkgame"
-    | ConnectToNetworkGame _ -> "connectToGame"
-    | StartGame -> "startGame"
+    | StartHostingNetworkGame -> "starthostingnetworkgame"
+    | ConnectToNetworkGame _ -> "connecttoGame"
+    | StartGame -> "startgame"
     | ServerGameUpdate _ -> "gameupdate"
     | ControlInput _ -> "control"
     | GameOver _ -> "game over"
