@@ -66,7 +66,7 @@ namespace PongGame
             while (end)
             {
                 var rec = _clientSocket.Receive(out end);
-                builder.Append(string.Format("{0}:", Encoding.Unicode.GetString(rec)));
+                builder.Append(string.Format("{0}:", Encoding.UTF8.GetString(rec)));
             }
 
             var replyString = builder.ToString();
@@ -91,7 +91,7 @@ namespace PongGame
 
         public void Connect()
         {
-           Connect("tcp://localhost:5555");
+           Connect("tcp://127.0.0.1:5");
         }
 
         public void Dispose()
