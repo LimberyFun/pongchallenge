@@ -13,6 +13,7 @@ type GameStatus =
     | GetServerAddressAndPort
     | PlayerOneWon
     | PlayerTwoWon
+    | NetworkGameOver of string
     | MoveTo of GameStatus
     | Exit
 
@@ -37,5 +38,7 @@ type GameState =
       NetworkPort : string
       OwnIpAddress : string
       ServerAddressAndPort : string
+      NetworkGameHostAddressAndPort : string
+      PaddleHeight: double
     }
 

@@ -6,23 +6,23 @@ let renderChar left top (char:string) =
     Console.SetCursorPosition(left,top)
     Console.Write(char)
 
-let renderPaddle left top char =
-    [0..2] |> List.map (fun e -> e + top) |> List.iter (fun e -> renderChar left e char)
+let renderPaddle left top paddleHeight char =
+    [0..paddleHeight] |> List.map (fun e -> e + top) |> List.iter (fun e -> renderChar left e char)
 
-let writePaddle left top =
-    renderPaddle left top "█"
+let writePaddle left top paddleHeight =
+    renderPaddle left top paddleHeight "█"
 
-let deletePaddle left top =
-    renderPaddle left top " "
+let deletePaddle left top paddleHeight =
+    renderPaddle left top paddleHeight " "
 
 let renderPlayerOnePaddle state =
-    deletePaddle 1 (System.Convert.ToInt32(Math.Round(state.PreviousPlayerOnePaddlePosition)))
-    writePaddle 1 (System.Convert.ToInt32(Math.Round(state.PlayerOnePaddlePosition)))
+    deletePaddle 1 (System.Convert.ToInt32(Math.Round(state.PreviousPlayerOnePaddlePosition))) (System.Convert.ToInt32(Math.Round(state.PaddleHeight)))
+    writePaddle 1 (System.Convert.ToInt32(Math.Round(state.PlayerOnePaddlePosition))) (System.Convert.ToInt32(Math.Round(state.PaddleHeight)))
     state
 
 let renderPlayerTwoPaddle state =
-    deletePaddle 78 (System.Convert.ToInt32(Math.Round(state.PreviousPlayerTwoPaddlePosition)))
-    writePaddle 78 (System.Convert.ToInt32(Math.Round(state.PlayerTwoPaddlePosition)))
+    deletePaddle 78 (System.Convert.ToInt32(Math.Round(state.PreviousPlayerTwoPaddlePosition))) (System.Convert.ToInt32(Math.Round(state.PaddleHeight)))
+    writePaddle 78 (System.Convert.ToInt32(Math.Round(state.PlayerTwoPaddlePosition))) (System.Convert.ToInt32(Math.Round(state.PaddleHeight)))
     state
 
 let decideScoreColor myScore otherPlayerScore defaultColour = 
@@ -79,6 +79,7 @@ let renderGameScreen = renderPlayerOneScore >> renderPlayerTwoScore >> renderDiv
 let renderWaitingForPartner state =
     Console.SetCursorPosition(0,0)
     Console.Write("Waiting For Partner to connect to server at {0}", state.ServerAddressAndPort)
+    Console.SetCursorPosition(0,2)
 
 let render state =
     match state.Status with 
@@ -86,16 +87,21 @@ let render state =
                     state
     | RunningTwoPlayer -> state |> renderGameScreen
     | RunningSinglePlayer -> state |> renderGameScreen
+    | RunningNetworkPlayerAsHost -> state |> renderGameScreen
+    | RunningNetworkPlayerAsClient -> state |> renderGameScreen
     | PlayerOneWon -> startGame "Player One won"
                       state
     | PlayerTwoWon -> startGame "Player Two won"
                       state
+    | NetworkGameOver winner -> startGame (winner + " won") 
+                                state
     | MoveTo _ -> Console.Clear ()
                   state
     | WaitingForPartner -> renderWaitingForPartner state
                            state
     | BePongServer -> Console.SetCursorPosition(0,0)
                       Console.Write("Acting as registry server on {0}:{1}", state.OwnIpAddress, state.NetworkPort)
+                      Console.SetCursorPosition(0,2)
                       state
     | GetOwnPortAndIp _ -> Console.SetCursorPosition(0,0)
                            Console.Write("Please enter port to use: ")
@@ -107,4 +113,5 @@ let render state =
                                  Console.Write("Format: xxx.xxx.xxx.xxx:yyyy: ")
                                  Console.CursorVisible <- true
                                  state
+
     | _ -> state
