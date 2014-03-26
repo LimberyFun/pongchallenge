@@ -18,17 +18,7 @@ namespace PongGame
     /// </summary>
     public partial class MainWindow : INotifyPropertyChanged
     {
-        private double ballX;
-        private double ballY;
-        private double padHeight;
-        private int player1Possition;
-        private int player2Possition;
-        private double Player1Score;
-        private double Player2Score;
-       // private bool _beSlave;
-       
-
-        private double _angle = 90;
+      private double _angle = 90;
         private double _speed;
         private int _padSpeed;
         private Ball _ball;
@@ -148,11 +138,13 @@ namespace PongGame
 
         private void OnGameUpdate(GameUpdate gameUpdate)
         {
-            if (!_networkMode)
+            if (_networkMode)
             {
-                BeSlave();
+                GameUpdate(gameUpdate);
             }
         }
+
+         
 
         private void OnControlUpdate(ControlInput controlInput)
         {
@@ -266,52 +258,55 @@ namespace PongGame
 
         private void Timer_Tick(object sender, EventArgs e)
         {
-            // Validate the board area
-            if (_ball.Y <= 0) 
-                _angle = _angle + (180 - 2 * _angle);
-            if (_ball.Y >= MainCanvas.ActualHeight - 20) 
-                _angle = _angle + (180 - 2 * _angle);
+            if (!_networkMode)
+            {
+                // Validate the board area
+                if (_ball.Y <= 0)
+                    _angle = _angle + (180 - 2*_angle);
+                if (_ball.Y >= MainCanvas.ActualHeight - 20)
+                    _angle = _angle + (180 - 2*_angle);
 
-            if (IsCollisioned() == true)
-            {
-                ChangeAngle();
-                AlternateDirection();
-            }
-
-            //http://www.mathsisfun.com/geometry/radians.html
-            var radians = (Math.PI / 180) * _angle;
-            _ball.X += Math.Sin(radians) * _speed;
-            _ball.Y += (-Math.Cos(radians)) * _speed;
-
-            if (_ball.X >= 790)
-            {
-                LeftPoints += 1;
-                Reset();
-            }
-            if (_ball.X <= 5)
-            {
-                RightPoints += 1;
-                Reset();
-            }
-            //var v = (new Random().Next(1, 100));
-            //if (v % 10 == 0)
-            {
-                if (_ball.X <= 10 && _isSinglePlayer)
+                if (IsCollisioned() == true)
                 {
-                    MovePad((int) _ball.Y);
+                    ChangeAngle();
+                    AlternateDirection();
                 }
-            }
 
-            if ((LeftPoints != 0 && LeftPoints%10 == 0) || (RightPoints!=0 && RightPoints%10 == 0))
-            {
-                if(_levelBreak) return;
-                if(_lpoints > _rpoints)
-                    Level = _lpoints/10;
-                if(_rpoints > _lpoints)
-                    Level = _rpoints / 10;
+                //http://www.mathsisfun.com/geometry/radians.html
+                var radians = (Math.PI/180)*_angle;
+                _ball.X += Math.Sin(radians)*_speed;
+                _ball.Y += (-Math.Cos(radians))*_speed;
 
-                _speed = _level + 3;
-                _levelBreak = true;
+                if (_ball.X >= 790)
+                {
+                    LeftPoints += 1;
+                    Reset();
+                }
+                if (_ball.X <= 5)
+                {
+                    RightPoints += 1;
+                    Reset();
+                }
+                //var v = (new Random().Next(1, 100));
+                //if (v % 10 == 0)
+                {
+                    if (_ball.X <= 10 && _isSinglePlayer)
+                    {
+                        MovePad((int) _ball.Y);
+                    }
+                }
+
+                if ((LeftPoints != 0 && LeftPoints%10 == 0) || (RightPoints != 0 && RightPoints%10 == 0))
+                {
+                    if (_levelBreak) return;
+                    if (_lpoints > _rpoints)
+                        Level = _lpoints/10;
+                    if (_rpoints > _lpoints)
+                        Level = _rpoints/10;
+
+                    _speed = _level + 3;
+                    _levelBreak = true;
+                }
             }
 
             if ((!_beSlave) && _peered)
@@ -429,14 +424,16 @@ namespace PongGame
                 Player2Score = player2Score
             },true);
         }
-        private  void BeSlave()
+        private  void GameUpdate(GameUpdate gameUpdate)
         {
-            _ball.X = Convert.ToDouble((ballX * 800) / 1000);
-            _ball.Y = Convert.ToDouble((ballY * 475) / 1000);
-            _player1.Y = player1Possition;
-            _player2.Y = player2Possition;
-            Player1Score = _lpoints;
-            Player2Score = _rpoints;
+            _ball.X = Convert.ToDouble((gameUpdate.HorizontalPosition * 800) / 1000);
+            _ball.Y = Convert.ToDouble((gameUpdate.VerticalPosition * 475) / 1000);
+            _player1.Y = ((gameUpdate.Player1PadPosition*475)/1000);
+            _player2.Y = ((gameUpdate.Player2PadPosition*475)/1000);
+            LeftPoints = gameUpdate.Player1Score;
+            RightPoints = gameUpdate.Player2Score;
+            _player1.PadLength = gameUpdate.PadHeight;
+            _player2.PadLength = gameUpdate.PadHeight;
         }
     }
 }
