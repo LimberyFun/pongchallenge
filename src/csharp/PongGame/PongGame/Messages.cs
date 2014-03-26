@@ -22,12 +22,18 @@ namespace PongGame
 
         public override string ToString()
         {
-            return string.Format("{0},{1}", MessageType.ToLower(), MessageText);
+            return string.Format("{0},{1}", MessageType, MessageText);
         }
     }
 
     public class GameUpdate : Message
     {
+        public GameUpdate(){}
+
+        public GameUpdate(string messageType, string messageText)
+            : base(messageType, messageText)
+        {}
+
         public int HorizontalPosition { get; set; }
         public int VerticalPosition { get; set; }
         public int Player1PadPosition { get; set; }

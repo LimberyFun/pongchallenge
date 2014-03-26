@@ -1,6 +1,5 @@
 ﻿using System;
 using System.ComponentModel;
-using System.Threading;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
@@ -28,9 +27,10 @@ namespace PongGame
         private readonly DispatcherTimer _timer;
         private bool _levelBreak;
         private bool _isSinglePlayer = false;
-        private INetworkManager _networkManager;
-        private INetworkManager _networkManagerPeer;
+        private readonly INetworkManager _networkManager;
+        private readonly INetworkManager _networkManagerPeer;
         private bool _beSlave;
+        private bool _peered = false;
         private const string MyAddress = "10.10.1.29:1118";
 
         public Action<Message> OnMessageReceived;
@@ -104,6 +104,8 @@ namespace PongGame
             _ball =new Ball { X = 180, Y = 110, MovingRight = true };
             _player1 = new Pad { Y = 90};
             _player2 = new Pad { Y = 90 };
+            _peered = false;
+            _beSlave = false;
 
             LeftPoints = 0;
             RightPoints = 0;
@@ -141,17 +143,19 @@ namespace PongGame
             }
             else if (message.MessageType.ToLower() == "connecttogame")
             {
-                while (_networkManagerPeer.IsConnected)
-                    _networkManagerPeer.Connect(message.MessageText);
+                while (!_networkManagerPeer.IsConnected)
+                    _networkManagerPeer.Connect("tcp://" + message.MessageText);
                 
                 _networkManager.Dispose();
+                _peered = true;
 
                 // Send start game command
-                _networkManagerPeer.Send(new Message("startGame", string.Empty));
+                _networkManagerPeer.Send(new Message("startgame", string.Empty));
                 _beSlave = true;
             }
             else if (message.MessageType.ToLower() == "starthostingnetworkgame")
             {
+                _peered = true;
                 _beSlave = false;
                 _networkManager.Dispose();
             }
@@ -213,10 +217,10 @@ namespace PongGame
             if (data.ToLower().StartsWith("connecttogame"))
             {
                 var s = data.Split(':');
-                if (s.Length == 3)
+                if (s.Length == 4)
                 {
                     if (OnMessageReceived != null)
-                        OnMessageReceived(new Message() {MessageType = "connecttogame", MessageText = s[1] + s[2]});
+                        OnMessageReceived(new Message() {MessageType = "connecttogame", MessageText = s[1] + ":" + s[2]});
                 }
             }
         }
@@ -271,7 +275,7 @@ namespace PongGame
                 _levelBreak = true;
             }
 
-            if (!_beSlave)
+            if ((!_beSlave) && _peered)
                 SendGameUpdate((int) _ball.X, (int) _ball.Y, _player1.Y, _player2.Y, _player1.PadLength, _lpoints,
                     _rpoints);
         }
@@ -282,7 +286,7 @@ namespace PongGame
             _ball.X = 380;
             _levelBreak = false;
 
-            if (!_beSlave)
+            if ((!_beSlave) && _peered)
                 SendGameUpdate((int)_ball.X, (int)_ball.Y, _player1.Y, _player2.Y, _player1.PadLength, _lpoints,
                     _rpoints);
         }
@@ -290,7 +294,7 @@ namespace PongGame
         private void MovePad(int yPosition)
         {
             _player1.Y = yPosition;
-            if (!_beSlave)
+            if ((!_beSlave) && _peered)
                 SendGameUpdate((int)_ball.X, (int)_ball.Y, _player1.Y, _player2.Y, _player1.PadLength, _lpoints,
                     _rpoints);
         }
@@ -371,7 +375,7 @@ namespace PongGame
         private void SendGameUpdate(int ballX, int ballY, int player1Paddle, int player2Paddle,
             int paddleHeight, int player1Score, int player2Score)
         {
-            _networkManagerPeer.Send(new GameUpdate()
+            _networkManagerPeer.Send(new GameUpdate("gameupdate", string.Empty)
             {
                 HorizontalPosition = ballX,
                 VerticalPosition = ballY,
