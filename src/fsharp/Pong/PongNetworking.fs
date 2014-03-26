@@ -45,13 +45,13 @@ let getHostAddressAndPortFromMessage = Seq.skip 1 >> Seq.head
 
 let waitForStartGame state (socket:NetMQSocket) =
     let msg = socket.ReceiveStringMessages() |> Seq.toList
-    if getMessageTypeFromMessage msg = "startGame" then 
+    if getMessageTypeFromMessage msg = "startgame" then 
         {state with Status = RunningNetworkPlayerAsHost}
     else
         failwith "Invalid message"
 
 let sendStartGame state (socket:NetMQSocket) =
-    socket.Send("startGame")
+    socket.Send("startgame")
     {state with Status = RunningNetworkPlayerAsClient}
 
 
@@ -139,8 +139,8 @@ let receiveGameUpdateMessage (socket:NetMQSocket) state =
 let processMessage message state =
     let messagetype = (getMessageTypeFromMessage message)
     match messagetype with
-    | "startHostingNetworkgame" -> {state with Status = MoveTo(RunningNetworkPlayerAsHost)}
-    | "connectToGame" -> {state with Status = MoveTo(RunningNetworkPlayerAsClient); NetworkGameHostAddressAndPort = getHostAddressAndPortFromMessage message}
+    | "starthostingnetworkgame" -> {state with Status = MoveTo(RunningNetworkPlayerAsHost)}
+    | "connecttoGame" -> {state with Status = MoveTo(RunningNetworkPlayerAsClient); NetworkGameHostAddressAndPort = getHostAddressAndPortFromMessage message}
     | _ -> failwith ("Invalid message: " + messagetype)
 
 let sendEndOfGameMessage (socket:NetMQSocket) state =
