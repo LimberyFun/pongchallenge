@@ -18,6 +18,16 @@ namespace PongGame
     /// </summary>
     public partial class MainWindow : INotifyPropertyChanged
     {
+        private double ballX;
+        private double ballY;
+        private double padHeight;
+        private int player1Possition;
+        private int player2Possition;
+        private double Player1Score;
+        private double Player2Score;
+       // private bool _beSlave;
+       
+
         private double _angle = 90;
         private double _speed;
         private int _padSpeed;
@@ -138,7 +148,10 @@ namespace PongGame
 
         private void OnGameUpdate(GameUpdate gameUpdate)
         {
-            throw new NotImplementedException();
+            if (!_networkMode)
+            {
+                BeSlave();
+            }
         }
 
         private void OnControlUpdate(ControlInput controlInput)
@@ -415,6 +428,15 @@ namespace PongGame
                 Player1Score = player1Score,
                 Player2Score = player2Score
             },true);
+        }
+        private  void BeSlave()
+        {
+            _ball.X = Convert.ToDouble((ballX * 800) / 1000);
+            _ball.Y = Convert.ToDouble((ballY * 475) / 1000);
+            _player1.Y = player1Possition;
+            _player2.Y = player2Possition;
+            Player1Score = _lpoints;
+            Player2Score = _rpoints;
         }
     }
 }
