@@ -26,6 +26,7 @@ namespace PongGame
         private NetMQSocket _clientSocket;
         private bool _isConnected;
         private readonly SocketType _socketType;
+        private NetMQContext context;
 
         public Action<string> OnDataReceived { get; set; }
 
@@ -37,6 +38,7 @@ namespace PongGame
         public NetworkManager(SocketType socketType)
         {
             _socketType = socketType;
+            context = NetMQContext.Create();
         }
 
         public void Send(Message message, bool needResponse = false)
@@ -46,10 +48,10 @@ namespace PongGame
 
             Console.WriteLine("Sending request {0}...", message);
             if (_socketType == SocketType.Dealer)
-                _clientSocket.Send(Guid.NewGuid().ToByteArray());
+                _clientSocket.SendMore(Guid.NewGuid().ToString());
 
-            _clientSocket.Send(message.MessageType, sendMore: true);
-            _clientSocket.Send(message.MessageText);
+            _clientSocket.SendMore(message.MessageType)
+                .Send(message.MessageText);
 
             if (needResponse) Receieve();
         }
@@ -78,13 +80,10 @@ namespace PongGame
 
         public void Connect(string address)
         {
-            using (var context = NetMQContext.Create())
-            {
-                if (_socketType == SocketType.Dealer)
-                    _clientSocket = context.CreateDealerSocket();
-                if (_socketType == SocketType.Reply)
-                    _clientSocket = context.CreateSocket(ZmqSocketType.Rep);
-            }
+            if (_socketType == SocketType.Dealer)
+                _clientSocket = context.CreateDealerSocket();
+            if (_socketType == SocketType.Reply)
+                _clientSocket = context.CreateSocket(ZmqSocketType.Rep);
 
             _clientSocket.Connect(address);
             _isConnected = true;
@@ -97,8 +96,10 @@ namespace PongGame
 
         public void Dispose()
         {
-            if(_clientSocket!= null)
+            if (_clientSocket != null)
                 _clientSocket.Dispose();
+            if (context != null)
+                context.Dispose();
         }
     }
 

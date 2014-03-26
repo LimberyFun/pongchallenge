@@ -159,7 +159,7 @@ namespace PongGame
 
         private void BeginConnectingToNetwork()
         {
-            while (_networkManager.IsConnected)
+            while (!_networkManager.IsConnected)
             {
                 _networkManager.Connect();
             }
