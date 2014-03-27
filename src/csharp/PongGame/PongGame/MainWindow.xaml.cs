@@ -19,6 +19,7 @@ namespace PongGame
     public partial class MainWindow : INotifyPropertyChanged
     {
       private double _angle = 90;
+        private bool _readyForReceive = false;
         private double _speed;
         private int _padSpeed;
         private Ball _ball;
@@ -141,7 +142,18 @@ namespace PongGame
             if (_networkMode)
             {
                 GameUpdate(gameUpdate);
+
+                var controlInputValue = "0";
+                if (Keyboard.IsKeyDown(Key.A))
+                    controlInputValue = "1";
+                if (Keyboard.IsKeyDown(Key.Z))
+                    controlInputValue = "2";
+
+                _networkManagerPeer.Send(new Message("control", controlInputValue));
+
+                _readyForReceive = true;
             }
+
         }
 
          
@@ -258,7 +270,7 @@ namespace PongGame
 
         private void Timer_Tick(object sender, EventArgs e)
         {
-            if (!_networkMode)
+            if (!_networkMode || (!_beSlave))
             {
                 // Validate the board area
                 if (_ball.Y <= 0)
@@ -310,8 +322,17 @@ namespace PongGame
             }
 
             if ((!_beSlave) && _peered)
+            {
                 SendGameUpdate((int) _ball.X, (int) _ball.Y, _player1.Y, _player2.Y, _player1.PadLength, _lpoints,
                     _rpoints);
+                
+
+            }
+            if (_readyForReceive && _networkMode && _beSlave && _peered)
+            {
+                _readyForReceive = false;
+                _networkManagerPeer.Receieve();
+            }
         }
 
         private void Reset()
@@ -426,14 +447,17 @@ namespace PongGame
         }
         private  void GameUpdate(GameUpdate gameUpdate)
         {
-            _ball.X = Convert.ToDouble((gameUpdate.HorizontalPosition * 800) / 1000);
-            _ball.Y = Convert.ToDouble((gameUpdate.VerticalPosition * 475) / 1000);
-            _player1.Y = ((gameUpdate.Player1PadPosition*475)/1000);
-            _player2.Y = ((gameUpdate.Player2PadPosition*475)/1000);
-            LeftPoints = gameUpdate.Player1Score;
-            RightPoints = gameUpdate.Player2Score;
-            _player1.PadLength = gameUpdate.PadHeight;
-            _player2.PadLength = gameUpdate.PadHeight;
+            Dispatcher.Invoke(() =>
+            {
+                _ball.X = Convert.ToDouble((gameUpdate.HorizontalPosition * 800) / 1000);
+                _ball.Y = Convert.ToDouble((gameUpdate.VerticalPosition * 475) / 1000);
+                _player1.Y = ((gameUpdate.Player1PadPosition * 475) / 1000);
+                _player2.Y = ((gameUpdate.Player2PadPosition * 475) / 1000);
+                LeftPoints = gameUpdate.Player1Score;
+                RightPoints = gameUpdate.Player2Score;
+                _player1.PadLength = gameUpdate.PadHeight;
+                _player2.PadLength = gameUpdate.PadHeight;
+            });
         }
     }
 }
